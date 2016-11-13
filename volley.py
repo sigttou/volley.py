@@ -66,7 +66,7 @@ for span in soup.find_all('span'):
         AWAY_POINTS = span.contents[0]
     elif span.attrs.get('id').startswith("L_TimeSet"):
         try:
-            SET_TIME[int(span.attrs.get('id')[-1])-1] = int(span.contents[0][:-2])
+            SET_TIME[int(span.attrs.get('id')[-1])-1] = int(span.contents[0][:-1])
         except:
             pass
     elif span.attrs.get('id').startswith("L_Set"):
@@ -135,7 +135,7 @@ print("---|---|----")
 for i in range(0,len(SET_TIME)):
     table_line = "{} | {}' | {}:{}".format(i+1, SET_TIME[i], AWAY_SET_POINTS[i], HOME_SET_POINTS[i])
     print(table_line)
-overall = "**OA** | **{time_over}** | **{home_over}:{away_over}**".format(**data)
+overall = "**OA** | **{time_over}'** | **{home_over}:{away_over}**".format(**data)
 print(overall)
 print()
 print("--")
