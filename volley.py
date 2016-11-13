@@ -122,7 +122,7 @@ print()
 print("\# | {home_team} | \# | {away_team}".format(**data))
 print("---|---|---|----")
 for i in range(0, max(len(HOME_MEMBERS), len(AWAY_MEMBERS))):
-    print(u"{} | {} | {} | {}".format( i, HOME_MEMBERS.get(i), i, AWAY_MEMBERS.get(i)))
+    print(u"{} | {} | {} | {}".format( i, HOME_MEMBERS.get(i) if HOME_MEMBERS.get(i) else "", i, AWAY_MEMBERS.get(i) if AWAY_MEMBERS.get(i) else ""))
 print()
 print("--")
 print("---")
