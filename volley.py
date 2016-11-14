@@ -26,6 +26,8 @@ HOME_MEMBERS = {}
 HOME_NUMS = {}
 AWAY_MEMBERS = {}
 AWAY_NUMS = {}
+HOME_COACH = ""
+AWAY_COACH = ""
 
 # Get some info from Stats website
 url = "http://volleynet.at/datavolley/2016/women/&D1-" + sys.argv[1] + "_REPORT.htm"
@@ -63,6 +65,10 @@ for span in soup.find_all('span'):
             pass
     elif span.attrs.get('id') == 'corpo_pagina_L_MatchHour':
         KICK_OFF = span.contents[0]
+    elif span.attrs.get('id') == 'corpo_pagina_Coach_Casa':
+        HOME_COACH = span.contents[0][1:-1]
+    elif span.attrs.get('id') == 'corpo_pagina_Coach_Fuori':
+        AWAY_COACH = span.contents[0][1:-1]
 
 
 # Now we fetch the website with the live stats
@@ -115,7 +121,7 @@ data = {'home_team': HOME_TEAM,
 
 # And now we print the info
 
-header = "#{time_over}': {home_team} {home_points} : {away_points} {away_team}".format(**data)
+header = "#{home_team} {home_points} : {away_points} {away_team}".format(**data)
 print(header)
 print("---")
 print("**Competition:** Austrian Volley League Women, regular season")
@@ -140,6 +146,8 @@ print("\# | {home_team} | \# | {away_team}".format(**data))
 print("---|---|---|----")
 for i in range(0, max(len(HOME_MEMBERS), len(AWAY_MEMBERS))):
     print(u"{} | {} | {} | {}".format( HOME_NUMS.get(i) if HOME_NUMS.get(i) else "", HOME_MEMBERS.get(i) if HOME_MEMBERS.get(i) else "", AWAY_NUMS.get(i) if AWAY_NUMS.get(i) else "", AWAY_MEMBERS.get(i) if AWAY_MEMBERS.get(i) else ""))
+print("|||")
+print(u" | {} | | {}".format(HOME_COACH, AWAY_COACH))
 print()
 print("--")
 print("---")
