@@ -7,11 +7,13 @@ import urllib3
 import sys
 from bs4 import BeautifulSoup
 from string import Template
+import praw
+import OAuth2Util
 
 
 def main():
-    if len(sys.argv) < 2:
-        print("./volley <GAME NR.>")
+    if len(sys.argv) < 3:
+        print("./volley <GAME NR.> <reddit_link>")
         exit(-1)
 
     data = {'home_team': '',
@@ -45,7 +47,7 @@ def main():
     parse_config(data)
     get_general_info(data)
     get_scoreline(data)
-    print_thread_content(data)
+    post_thread(data)
     exit(0)
 
 
@@ -157,11 +159,14 @@ def get_scoreline(data):
     data['scoreline'] += "**OA** | **{time_over}'** | **{home_over}:{away_over}**\n".format(**data)
    
 
-def print_thread_content(data):
+def post_thread(data):
     filein = open("templates/thread.tpl")
     src = Template(filein.read())
     result = src.substitute(data)
-    print(result)
+    r = praw.Reddit("python3:VolleyAT1.0 (by /u/gnudalf)")
+    o = OAuth2Util.OAuth2Util(r, configfile="oauth.ini")
+    post = r.get_submission(url=sys.argv[2])
+    post.edit(result)
 
 
 if __name__ == '__main__':
