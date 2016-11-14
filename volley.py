@@ -163,7 +163,7 @@ def post_thread(data):
     filein = open("templates/thread.tpl")
     src = Template(filein.read())
     result = src.substitute(data)
-    r = praw.Reddit("python3:VolleyAT1.0 (by /u/gnudalf)")
+    r = praw.Reddit("python3:VolleyAT1.0 (by /u/K-3PX)")
     o = OAuth2Util.OAuth2Util(r, configfile="oauth.ini")
     post = r.get_submission(url=sys.argv[2])
     post.edit(result)
