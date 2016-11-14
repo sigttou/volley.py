@@ -8,3 +8,5 @@ CONFIG = {
     'stream': "TBA",
     'competition': "Austrian Volley League Women: Grunddurchgang"
 }
+
+TELEGRAM_TOKEN = 'do not share'
