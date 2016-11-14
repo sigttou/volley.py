@@ -4,18 +4,21 @@
 # Further Information: https://crap.solutions/pages/volley.html - https://github.com/sigttou/volley.py
 
 import urllib3
-import sys
 from bs4 import BeautifulSoup
 from string import Template
 import praw
 import OAuth2Util
+from config import TELEGRAM_TOKEN
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+import logging
 
+# Enable logging
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
 
-def main():
-    if len(sys.argv) < 3:
-        print("./volley <GAME NR.> <reddit_link> [update]")
-        exit(-1)
+logger = logging.getLogger(__name__)
 
+def start(update, end=0):
     data = {'home_team': '',
             'away_team': '',
             'home_points': 0,
@@ -48,22 +51,26 @@ def main():
     parse_config(data)
     get_general_info(data)
     get_scoreline(data)
-    if len(sys.argv) > 3:
-        if sys.argv[3] == 'E':
-            data['status'] = "Finished: "
-            post_thread(data)
-            open("updates", 'w').close()
-        else:
-            add_updates(data)
-            post_thread(data)
-    exit(0)
+    from config import REDDIT_LINK
+    if update:
+        add_updates(data, update)
+    if end:
+        data['status'] = "Finished: "
+        post_thread(data, REDDIT_LINK)
+        open("updates", 'w').close()
+        return
+    post_thread(data, REDDIT_LINK)
 
 
 def parse_config(data):
     #Config
     from config import CONFIG
+    from config import PREFIX_LINK
+    from config import GAME_NR
     for k in CONFIG:
         data[k] = CONFIG[k]
+    data['stat_url'] = PREFIX_LINK + "&" + GAME_NR + "_REPORT.htm"
+    data['score_url'] = PREFIX_LINK + GAME_NR + "_LIVE.htm"
 
 
 def get_general_info(data):
@@ -167,11 +174,11 @@ def get_scoreline(data):
     data['scoreline'] += "**OA** | **{time_over}'** | **{home_over}:{away_over}**\n".format(**data)
 
 
-def add_updates(data):
+def add_updates(data, update):
     with open("updates", "a") as f:
-        f.write("**" + str(data['time_over']) + "'**: " + " ".join(sys.argv[3:]) + "\n\n")
+        f.write("**" + str(data['time_over']) + "'**: " + " " + update + "\n\n")
 
-def post_thread(data):
+def post_thread(data, url):
     filein = open("updates")
     data['updates'] = filein.read()
     filein.close()
@@ -181,9 +188,37 @@ def post_thread(data):
     result = src.substitute(data)
     r = praw.Reddit("python3:VolleyAT1.0 (by /u/K-3PX)")
     o = OAuth2Util.OAuth2Util(r, configfile="oauth.ini")
-    post = r.get_submission(url=sys.argv[2])
+    post = r.get_submission(url=url)
     post.edit(result)
 
+
+def update_match(bot, update):
+    if not update.message.from_user.username == "sigttou":
+        update.message.reply_text("WRONG USER NAME")
+        return
+    start(" ".join(update.message.text.split()[1:]))
+    update.message.reply_text("Match updated!")
+
+
+def end_match(bot, update):
+    if not update.message.from_user.username == "sigttou":
+        update.message.reply_text("WRONG USER NAME")
+        return
+    start("The game has ended!", 1)
+    update.message.reply_text("Match ended!")
+
+def main():
+    updater = Updater("241285829:AAH3hzqCeKdqxvAGe38qOc1ipJwV08uV2uw")
+    dp = updater.dispatcher
+    dp.add_handler(CommandHandler("up", update_match))
+    dp.add_handler(CommandHandler("e", end_match))
+    # Start the Bot
+    updater.start_polling()
+
+    # Run the bot until the you presses Ctrl-C or the process receives SIGINT,
+    # SIGTERM or SIGABRT. This should be used most of the time, since
+    # start_polling() is non-blocking and will stop the bot gracefully.
+    updater.idle()
 
 if __name__ == '__main__':
     main()
