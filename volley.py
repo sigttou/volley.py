@@ -23,7 +23,9 @@ REFS = [None] * 2
 LOCATION = ""
 KICK_OFF = ""
 HOME_MEMBERS = {}
+HOME_NUMS = {}
 AWAY_MEMBERS = {}
+AWAY_NUMS = {}
 
 # Get some info from Stats website
 url = "http://volleynet.at/datavolley/2016/women/&D1-" + sys.argv[1] + "_REPORT.htm"
@@ -31,6 +33,25 @@ http_pool = urllib3.connection_from_url(url)
 r = http_pool.urlopen('GET',url)
 content = str(r.data.decode())
 soup = BeautifulSoup(content, 'html.parser')
+
+lookfor = []
+for td in soup.find_all('td'):
+    if td.attrs.get('class') == ["TabResults_Value"]:
+        if td.contents[0].attrs.get('color') == "#333333":
+            lookfor.append(td.contents[0])
+
+for i in range(0, len(lookfor)):
+    analyse = lookfor[i].contents
+    if len(analyse) > 1:
+        analyse = analyse[1]
+    else:
+        continue
+    if analyse.attrs.get('id') and analyse.attrs.get('id').startswith("corpo_pagina_GV_elenco_casa_L_Nome_"):
+        HOME_MEMBERS[len(HOME_MEMBERS)] = analyse.contents[0]
+        HOME_NUMS[len(HOME_NUMS)] = lookfor[i-1].contents[0]
+    elif analyse.attrs.get('id') and analyse.attrs.get('id').startswith("corpo_pagina_GV_elenco_fuori_L_Nome_"):
+        AWAY_MEMBERS[len(AWAY_MEMBERS)] = analyse.contents[0]
+        AWAY_NUMS[len(AWAY_NUMS)] = lookfor[i-1].contents[0]
 
 for span in soup.find_all('span'):
     if span.attrs.get('id') == 'corpo_pagina_L_Impianto':
@@ -42,10 +63,6 @@ for span in soup.find_all('span'):
             pass
     elif span.attrs.get('id') == 'corpo_pagina_L_MatchHour':
         KICK_OFF = span.contents[0]
-    elif span.attrs.get('id') and span.attrs.get('id').startswith("corpo_pagina_GV_elenco_casa_L_Nome_"):
-        HOME_MEMBERS[len(HOME_MEMBERS)] = span.contents[0]
-    elif span.attrs.get('id') and span.attrs.get('id').startswith("corpo_pagina_GV_elenco_fuori_L_Nome_"):
-        AWAY_MEMBERS[len(AWAY_MEMBERS)] = span.contents[0]
 
 
 # Now we fetch the website with the live stats
@@ -122,7 +139,7 @@ print()
 print("\# | {home_team} | \# | {away_team}".format(**data))
 print("---|---|---|----")
 for i in range(0, max(len(HOME_MEMBERS), len(AWAY_MEMBERS))):
-    print(u"{} | {} | {} | {}".format( i, HOME_MEMBERS.get(i) if HOME_MEMBERS.get(i) else "", i, AWAY_MEMBERS.get(i) if AWAY_MEMBERS.get(i) else ""))
+    print(u"{} | {} | {} | {}".format( HOME_NUMS.get(i) if HOME_NUMS.get(i) else "", HOME_MEMBERS.get(i) if HOME_MEMBERS.get(i) else "", AWAY_NUMS.get(i) if AWAY_NUMS.get(i) else "", AWAY_MEMBERS.get(i) if AWAY_MEMBERS.get(i) else ""))
 print()
 print("--")
 print("---")
