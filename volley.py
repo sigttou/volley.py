@@ -43,8 +43,8 @@ def main():
             'away_set_points': [None] * 5
             }
     parse_config(data)
-    get_scoreline(data)
     get_general_info(data)
+    get_scoreline(data)
     print_thread_content(data)
     exit(0)
 
@@ -99,6 +99,10 @@ def get_general_info(data):
             data['home_coach'] = span.contents[0][1:-1]
         elif span.attrs.get('id') == 'corpo_pagina_Coach_Fuori':
             data['away_coach'] = span.contents[0][1:-1]
+        elif span.attrs.get('id') == 'corpo_pagina_L_HomeTeam':
+            data['home_team'] = span.contents[0]
+        elif span.attrs.get('id') == 'corpo_pagina_L_GuestTeam':
+            data['away_team'] = span.contents[0]
 
     data['teams'] += "\# | {home_team} | \# | {away_team}\n".format(**data)
     data['teams'] += "---|---|---|----\n"
@@ -121,12 +125,8 @@ def get_scoreline(data):
     soup = BeautifulSoup(content, 'html.parser')
 
     for span in soup.find_all('span'):
-        if span.attrs.get('id') == 'L_HomeTeam':
-            data['home_team'] = span.contents[0]
-        elif span.attrs.get('id') == 'L_WonSetHome':
+        if span.attrs.get('id') == 'L_WonSetHome':
             data['home_points'] = span.contents[0]
-        elif span.attrs.get('id') == 'L_GuestTeam':
-            data['away_team'] = span.contents[0]
         elif span.attrs.get('id') == 'L_WonSetGuest':
             data['away_points'] = span.contents[0]
         elif span.attrs.get('id').startswith("L_TimeSet"):
