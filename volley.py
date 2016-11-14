@@ -6,6 +6,7 @@
 import urllib3
 import sys
 from bs4 import BeautifulSoup
+from string import Template
 
 if len(sys.argv) < 2:
     print("./volley <GAME NR.>")
@@ -107,6 +108,9 @@ for span in soup.find_all('span'):
 HOME_OVERALL = sum(HOME_SET_POINTS)
 AWAY_OVERALL = sum(AWAY_SET_POINTS)
 TIME_OVERALL = sum(SET_TIME)
+COMPETITION = "Austrian Volley League Women, regular season"
+STREAM = "TBA"
+LINKS = ""
 
 data = {'home_team': HOME_TEAM,
         'away_team': AWAY_TEAM,
@@ -116,58 +120,31 @@ data = {'home_team': HOME_TEAM,
         'away_over': AWAY_OVERALL,
         'time_over': TIME_OVERALL,
         'location': LOCATION,
-        'kick_off': KICK_OFF
+        'kick_off': KICK_OFF,
+        'competition': COMPETITION,
+        'refs': ", ".join(REFS),
+        'stream': STREAM,
+        'links': LINKS,
+        'teams': "",
+        'scoreline': "",
+        'updates': ""
         }
 
-# And now we print the info
+# Team table sucks in template, so here is the code for it:
 
-header = "#{home_team} {home_points} : {away_points} {away_team}".format(**data)
-print(header)
-print("---")
-print("**Competition:** Austrian Volley League Women, regular season")
-print()
-print("**Kick Off Times:** {kick_off} CEST".format(**data))
-print()
-print("**Venue:** {location}".format(**data))
-print()
-print("**Referees:** {}, {}".format(REFS[0], REFS[1]))
-print()
-print("**Stream:** TBA")
-print()
-print("**Other Links:** [volleynet](https://www.volleynet.at)")
-print()
-print("--")
-print("---")
-print("--")
-print()
-print("#The Teams")
-print()
-print("\# | {home_team} | \# | {away_team}".format(**data))
-print("---|---|---|----")
+data['teams'] += "\# | {home_team} | \# | {away_team}\n".format(**data)
+data['teams'] += "---|---|---|----\n"
 for i in range(0, max(len(HOME_MEMBERS), len(AWAY_MEMBERS))):
-    print(u"{} | {} | {} | {}".format( HOME_NUMS.get(i) if HOME_NUMS.get(i) else "", HOME_MEMBERS.get(i) if HOME_MEMBERS.get(i) else "", AWAY_NUMS.get(i) if AWAY_NUMS.get(i) else "", AWAY_MEMBERS.get(i) if AWAY_MEMBERS.get(i) else ""))
-print("|||")
-print(u" | {} | | {}".format(HOME_COACH, AWAY_COACH))
-print()
-print("--")
-print("---")
-print("--")
-print()
-print("#Scoreline")
-print()
-print("Set | Time | Scoreline")
-print("---|---|----")
+    data['teams'] += "{} | {} | {} | {}\n".format( HOME_NUMS.get(i) if HOME_NUMS.get(i) else "", HOME_MEMBERS.get(i) if HOME_MEMBERS.get(i) else "", AWAY_NUMS.get(i) if AWAY_NUMS.get(i) else "", AWAY_MEMBERS.get(i) if AWAY_MEMBERS.get(i) else "")
+data['teams'] += "|||\n"
+data['teams'] += u" | {} | | {}\n".format(HOME_COACH, AWAY_COACH)
+
+
 for i in range(0,len(SET_TIME)):
-    table_line = "{} | {}' | {}:{}".format(i+1, SET_TIME[i], AWAY_SET_POINTS[i], HOME_SET_POINTS[i])
-    print(table_line)
-overall = "**OA** | **{time_over}'** | **{home_over}:{away_over}**".format(**data)
-print(overall)
-print()
-print("--")
-print("---")
-print("--")
-print()
-print("#Match Updates")
-print()
-print("--")
-print()
+    data['scoreline'] += "{} | {}' | {}:{}\n".format(i+1, SET_TIME[i], AWAY_SET_POINTS[i], HOME_SET_POINTS[i])
+data['scoreline'] += "**OA** | **{time_over}'** | **{home_over}:{away_over}**\n".format(**data)
+
+filein = open("templates/thread.tpl")
+src = Template(filein.read())
+result = src.substitute(data)
+print(result)
