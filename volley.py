@@ -13,7 +13,7 @@ import OAuth2Util
 
 def main():
     if len(sys.argv) < 3:
-        print("./volley <GAME NR.> <reddit_link>")
+        print("./volley <GAME NR.> <reddit_link> [update]")
         exit(-1)
 
     data = {'home_team': '',
@@ -42,12 +42,20 @@ def main():
             'away_coach': '',
             'set_time': [None] * 5,
             'home_set_points': [None] * 5,
-            'away_set_points': [None] * 5
+            'away_set_points': [None] * 5,
+            'status': ''
             }
     parse_config(data)
     get_general_info(data)
     get_scoreline(data)
-    post_thread(data)
+    if len(sys.argv) > 3:
+        if sys.argv[3] == 'E':
+            data['status'] = "Finished: "
+            post_thread(data)
+            open("updates", 'w').close()
+        else:
+            add_updates(data)
+            post_thread(data)
     exit(0)
 
 
@@ -157,11 +165,19 @@ def get_scoreline(data):
                                                             data['home_set_points'][i], 
                                                             data['away_set_points'][i])
     data['scoreline'] += "**OA** | **{time_over}'** | **{home_over}:{away_over}**\n".format(**data)
-   
+
+
+def add_updates(data):
+    with open("updates", "a") as f:
+        f.write("**" + str(data['time_over']) + "'**: " + " ".join(sys.argv[3:]) + "\n\n")
 
 def post_thread(data):
+    filein = open("updates")
+    data['updates'] = filein.read()
+    filein.close()
     filein = open("templates/thread.tpl")
     src = Template(filein.read())
+    filein.close()
     result = src.substitute(data)
     r = praw.Reddit("python3:VolleyAT1.0 (by /u/K-3PX)")
     o = OAuth2Util.OAuth2Util(r, configfile="oauth.ini")

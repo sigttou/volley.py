@@ -1,4 +1,4 @@
-#$home_team $home_points : $away_points $away_team
+#$status$home_team $home_points : $away_points $away_team
 ---
 **Competition:** $competition
 
