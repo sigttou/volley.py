@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # volley.py - Create match thread style info for reddit from volleyball games
-# Further Information: https://crap.solutions/pages/volley.html - https://github.com/sigttou/volley.py
+# Further Information:
+# https://crap.solutions/pages/volley.html - https://github.com/sigttou/volley.py
 
 import urllib3
 from bs4 import BeautifulSoup
@@ -9,7 +10,7 @@ from string import Template
 import praw
 import OAuth2Util
 from config import TELEGRAM_TOKEN
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Updater, CommandHandler
 import logging
 
 # Enable logging
@@ -17,6 +18,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
                     level=logging.INFO)
 
 logger = logging.getLogger(__name__)
+
 
 def start(update, end=0):
     data = {'home_team': '',
@@ -63,7 +65,6 @@ def start(update, end=0):
 
 
 def parse_config(data):
-    #Config
     from config import CONFIG
     from config import PREFIX_LINK
     from config import GAME_NR
@@ -76,7 +77,7 @@ def parse_config(data):
 def get_general_info(data):
     url = data['stat_url']
     http_pool = urllib3.connection_from_url(url)
-    r = http_pool.urlopen('GET',url)
+    r = http_pool.urlopen('GET', url)
     content = str(r.data.decode())
     soup = BeautifulSoup(content, 'html.parser')
 
@@ -85,7 +86,7 @@ def get_general_info(data):
         if td.attrs.get('class') == ["TabResults_Value"]:
             if td.contents[0].attrs.get('color') == "#333333":
                 lookfor.append(td.contents[0])
-    
+
     for i in range(0, len(lookfor)):
         analyse = lookfor[i].contents
         if len(analyse) > 1:
@@ -98,7 +99,7 @@ def get_general_info(data):
         elif analyse.attrs.get('id') and analyse.attrs.get('id').startswith("corpo_pagina_GV_elenco_fuori_L_Nome_"):
             data['away_members'][len(data['away_members'])] = analyse.contents[0]
             data['away_nums'][len(data['away_nums'])] = lookfor[i-1].contents[0]
-    
+
     for span in soup.find_all('span'):
         if span.attrs.get('id') == 'corpo_pagina_L_Impianto':
             data['location'] = span.contents[0]
@@ -125,19 +126,19 @@ def get_general_info(data):
     data['teams'] += "---|---|---|----\n"
     for i in range(0, max(len(data['home_members']), len(data['away_members']))):
         data['teams'] += "{} | {} | {} | {}\n".format(
-                data['home_nums'].get(i) if data['home_nums'].get(i) else "", 
+                data['home_nums'].get(i) if data['home_nums'].get(i) else "",
                 data['home_members'].get(i) if data['home_members'].get(i) else "",
                 data['away_nums'].get(i) if data['away_nums'].get(i) else "",
                 data['away_members'].get(i) if data['away_members'].get(i) else "")
     data['teams'] += "|||\n"
-    data['teams'] += u" | {} | | {}\n".format(  data['home_coach'],
-                                                data['away_coach'])
+    data['teams'] += u" | {} | | {}\n".format(data['home_coach'],
+                                              data['away_coach'])
 
 
 def get_scoreline(data):
     url = data['score_url']
     http_pool = urllib3.connection_from_url(url)
-    r = http_pool.urlopen('GET',url)
+    r = http_pool.urlopen('GET', url)
     content = str(r.data.decode())
     soup = BeautifulSoup(content, 'html.parser')
 
@@ -161,22 +162,23 @@ def get_scoreline(data):
                 data['away_set_points'][index] = points
             else:
                 data['home_set_points'][index] = points
-    
+
     data['home_over'] = sum(data['home_set_points'])
     data['away_over'] = sum(data['away_set_points'])
     data['time_over'] = sum(data['set_time'])
 
-    for i in range(0,len(data['set_time'])):
-        data['scoreline'] += "{} | {}' | {}:{}\n".format(   i+1, 
-                                                            data['set_time'][i],
-                                                            data['home_set_points'][i], 
-                                                            data['away_set_points'][i])
+    for i in range(0, len(data['set_time'])):
+        data['scoreline'] += "{} | {}' | {}:{}\n".format(i+1,
+                                                         data['set_time'][i],
+                                                         data['home_set_points'][i],
+                                                         data['away_set_points'][i])
     data['scoreline'] += "**OA** | **{time_over}'** | **{home_over}:{away_over}**\n".format(**data)
 
 
 def add_updates(data, update):
     with open("updates", "a") as f:
         f.write("**" + str(data['time_over']) + "'**: " + " " + update + "\n\n")
+
 
 def post_thread(data, url):
     filein = open("updates")
@@ -187,7 +189,7 @@ def post_thread(data, url):
     filein.close()
     result = src.substitute(data)
     r = praw.Reddit("python3:VolleyAT1.0 (by /u/K-3PX)")
-    o = OAuth2Util.OAuth2Util(r, configfile="oauth.ini")
+    OAuth2Util.OAuth2Util(r, configfile="oauth.ini")
     post = r.get_submission(url=url)
     post.edit(result)
 
@@ -207,8 +209,9 @@ def end_match(bot, update):
     start("The game has ended!", 1)
     update.message.reply_text("Match ended!")
 
+
 def main():
-    updater = Updater("241285829:AAH3hzqCeKdqxvAGe38qOc1ipJwV08uV2uw")
+    updater = Updater(TELEGRAM_TOKEN)
     dp = updater.dispatcher
     dp.add_handler(CommandHandler("up", update_match))
     dp.add_handler(CommandHandler("e", end_match))
