@@ -55,9 +55,10 @@ def start(update, end=0):
     get_general_info(data)
     get_scoreline(data)
     if update:
+        if end:
+            update = "**FINISHED: " + update + "**"
         add_updates(data, update)
     if end:
-        data['status'] = "Finished: "
         post_thread(data, os.environ['VOLLEYPY_REDDIT'])
         open("updates", 'w').close()
         return
