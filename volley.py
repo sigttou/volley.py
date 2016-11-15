@@ -267,12 +267,19 @@ def chg_stream(bot, update):
     if not update.message.from_user.username == TELEGRAM_ADMIN:
         update.message.reply_text("WRONG USER NAME")
         return
-    os.environ['VOLLEYPY_STREAM'] = update.message.text.split()[1]
+    link = update.message.text.split()[1]
+    os.environ['VOLLEYPY_STREAM'] = "[stream](" + link + ")"
     update.message.reply_text(os.environ['VOLLEYPY_STREAM'] + " DONE!")
 
 
 def info(bot, update):
-    update.message.reply_text("TODO")
+    reply = "'/i <LIVE_LINK>' will init the match thread\n"
+    reply += "'/u <UPDATE>' will add the given update to the thread\n"
+    reply += "'/e <FINALUPDATE>' will reset the bot and set the one given update\n"
+    reply += "'/comp <COMP>' will change the competition if it's not the default\n"
+    reply += "'/reddit <REDDIT_LINK> <LIVE_LINK>' load already existing thread\n"
+    reply += "'/stream <STREAM_LINK> will set a live stream'\n"
+    update.message.reply_text(reply)
 
 
 def main():
