@@ -204,8 +204,7 @@ def update_match(bot, update):
     if not os.environ['VOLLEYPY_REDDIT']:
         update.message.reply_text("No reddit link set")
         return
-
-    start(" ".join(update.message.text.split()[1:]))
+    start(u" ".join(update.message.text.split()[1:]))
     update.message.reply_text("Match updated!")
 
 
@@ -216,7 +215,7 @@ def end_match(bot, update):
     if not os.environ['VOLLEYPY_REDDIT']:
         update.message.reply_text("No reddit link set")
         return
-    start(" ".join(update.message.text.split()[1:]), 1)
+    start(u" ".join(update.message.text.split()[1:]), 1)
     os.environ['VOLLEYPY_REDDIT'] = ""
     os.environ['VOLLEYPY_STREAM'] = "TBA"
     os.environ['VOLLEYPY_VOLLEYDATA'] = ""
