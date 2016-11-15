@@ -1,12 +1,8 @@
 # Before a match thread change the settings here
-import sys
 
-CONFIG = {
-    'stat_url': "http://volleynet.at/datavolley/2016/women/&D1-" + sys.argv[1] + "_REPORT.htm",
-    'score_url': "http://volleynet.at/datavolley/2016/women/D1-" + sys.argv[1] + "_LIVE.htm",
-    'links': "[volleynet](https://www.volleynet.at)",
-    'stream': "TBA",
-    'competition': "Austrian Volley League Women: Grunddurchgang"
-}
-
-TELEGRAM_TOKEN = 'do not share'
+TELEGRAM_TOKEN = 'YOUR_APP_KEY'
+TELEGRAM_ADMIN = 'YOUR_NICK_NAME'
+DEFAULT_LINKS = '[volleynet](https://www.volleynet.at)'
+DEFAULT_COMP = 'Austrian Volley League Women: Grunddurchgang'
+SUBREDDIT = 'test'
+TELEGRAM_GROUP = 'ID_OF_YOUR_GRP'
