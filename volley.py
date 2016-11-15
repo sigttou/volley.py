@@ -9,9 +9,10 @@ from bs4 import BeautifulSoup
 from string import Template
 import praw
 import OAuth2Util
-from config import TELEGRAM_TOKEN
+from config import TELEGRAM_TOKEN, TELEGRAM_ADMIN
 from telegram.ext import Updater, CommandHandler
 import logging
+import os
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -32,7 +33,7 @@ def start(update, end=0):
             'kick_off': '',
             'competition': '',
             'refs': '',
-            'stream': '',
+            'stream': os.environ['VOLLEYPY_STREAM'],
             'links': '',
             'teams': '',
             'scoreline': '',
@@ -195,32 +196,46 @@ def post_thread(data, url):
 
 
 def update_match(bot, update):
-    if not update.message.from_user.username == "sigttou":
+    if not update.message.from_user.username == TELEGRAM_ADMIN:
         update.message.reply_text("WRONG USER NAME")
         return
+    if not os.environ['VOLLEYPY_REDDIT']:
+        update.message.reply_text("No reddit link set")
+        return
+    if not os.environ['VOLLEYPY_GAMENR']:
+        update.message.reply_text("No game nr. set")
+        return
+
     start(" ".join(update.message.text.split()[1:]))
     update.message.reply_text("Match updated!")
 
 
 def end_match(bot, update):
-    if not update.message.from_user.username == "sigttou":
+    if not update.message.from_user.username == TELEGRAM_ADMIN:
         update.message.reply_text("WRONG USER NAME")
         return
+    if not os.environ['VOLLEYPY_REDDIT']:
+        update.message.reply_text("No reddit link set")
+        return
+    if not os.environ['VOLLEYPY_GAMENR']:
+        update.message.reply_text("No game nr. set")
+        return
     start("The game has ended!", 1)
+    os.environ['VOLLEYPY_REDDIT'] = ""
+    os.environ['VOLLEYPY_GAMENR'] = ""
     update.message.reply_text("Match ended!")
 
 
 def main():
+    os.environ['VOLLEYPY_REDDIT'] = ""
+    os.environ['VOLLEYPY_GAMENR'] = ""
+    os.environ['VOLLEYPY_STREAM'] = "TBA"
     updater = Updater(TELEGRAM_TOKEN)
     dp = updater.dispatcher
     dp.add_handler(CommandHandler("up", update_match))
     dp.add_handler(CommandHandler("e", end_match))
-    # Start the Bot
     updater.start_polling()
 
-    # Run the bot until the you presses Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT. This should be used most of the time, since
-    # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
 
 if __name__ == '__main__':
