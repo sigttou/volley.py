@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 from string import Template
 import praw
 import OAuth2Util
-from config import TELEGRAM_TOKEN, TELEGRAM_ADMIN
+from config import TELEGRAM_GROUP, TELEGRAM_TOKEN, TELEGRAM_ADMIN, DEFAULT_COMP, DEFAULT_LINKS, SUBREDDIT
 from telegram.ext import Updater, CommandHandler
 import logging
 import os
@@ -31,10 +31,10 @@ def start(update, end=0):
             'time_over': 0,
             'location': '',
             'kick_off': '',
-            'competition': '',
+            'competition': os.environ['VOLLEYPY_COMP'],
             'refs': '',
             'stream': os.environ['VOLLEYPY_STREAM'],
-            'links': '',
+            'links': os.environ['VOLLEYPY_LINKS'],
             'teams': '',
             'scoreline': '',
             'updates': '',
@@ -51,28 +51,25 @@ def start(update, end=0):
             'away_set_points': [None] * 5,
             'status': ''
             }
-    parse_config(data)
+    get_match_links(data)
     get_general_info(data)
     get_scoreline(data)
-    from config import REDDIT_LINK
     if update:
         add_updates(data, update)
     if end:
         data['status'] = "Finished: "
-        post_thread(data, REDDIT_LINK)
+        post_thread(data, os.environ['VOLLEYPY_REDDIT'])
         open("updates", 'w').close()
         return
-    post_thread(data, REDDIT_LINK)
+    post_thread(data, os.environ['VOLLEYPY_REDDIT'])
 
 
-def parse_config(data):
-    from config import CONFIG
-    from config import PREFIX_LINK
-    from config import GAME_NR
-    for k in CONFIG:
-        data[k] = CONFIG[k]
-    data['stat_url'] = PREFIX_LINK + "&" + GAME_NR + "_REPORT.htm"
-    data['score_url'] = PREFIX_LINK + GAME_NR + "_LIVE.htm"
+def get_match_links(data):
+    spliturl = os.environ['VOLLEYPY_VOLLEYDATA'].split("/")
+    part_1 = "/".join(spliturl[:-1]) + "/"
+    part_2 = spliturl[-1].split("_")[0]
+    data['stat_url'] = part_1 + "&" + part_2 + "_REPORT.htm"
+    data['score_url'] = part_1 + part_2 + "_LIVE.htm"
 
 
 def get_general_info(data):
@@ -191,19 +188,21 @@ def post_thread(data, url):
     result = src.substitute(data)
     r = praw.Reddit("python3:VolleyAT1.0 (by /u/K-3PX)")
     OAuth2Util.OAuth2Util(r, configfile="oauth.ini")
-    post = r.get_submission(url=url)
-    post.edit(result)
+    if url:
+        post = r.get_submission(url=url)
+        post.edit(result)
+    else:
+        title = "Match Thread: {home_team} Vs {away_team} [{competition}]".format(**data)
+        post = r.submit(SUBREDDIT, title, result)
+        os.environ['VOLLEYPY_REDDIT'] = post.url
 
 
 def update_match(bot, update):
-    if not update.message.from_user.username == TELEGRAM_ADMIN:
-        update.message.reply_text("WRONG USER NAME")
+    if not (update.message.from_user.username == TELEGRAM_ADMIN or update.message.id == TELEGRAM_GROUP):
+        update.message.reply_text("WRONG USER NAME OR GROUP")
         return
     if not os.environ['VOLLEYPY_REDDIT']:
         update.message.reply_text("No reddit link set")
-        return
-    if not os.environ['VOLLEYPY_GAMENR']:
-        update.message.reply_text("No game nr. set")
         return
 
     start(" ".join(update.message.text.split()[1:]))
@@ -217,23 +216,82 @@ def end_match(bot, update):
     if not os.environ['VOLLEYPY_REDDIT']:
         update.message.reply_text("No reddit link set")
         return
-    if not os.environ['VOLLEYPY_GAMENR']:
-        update.message.reply_text("No game nr. set")
-        return
-    start("The game has ended!", 1)
+    start(" ".join(update.message.text.split()[1:]), 1)
     os.environ['VOLLEYPY_REDDIT'] = ""
-    os.environ['VOLLEYPY_GAMENR'] = ""
+    os.environ['VOLLEYPY_STREAM'] = "TBA"
+    os.environ['VOLLEYPY_VOLLEYDATA'] = ""
     update.message.reply_text("Match ended!")
+
+
+def init_match(bot, update):
+    if not update.message.from_user.username == TELEGRAM_ADMIN:
+        update.message.reply_text("WRONG USER NAME")
+        return
+    tocheck = update.message.text.split()[1]
+    if not tocheck.startswith("http://volleynet.at/") and not tocheck.endswith("LIVE.htm"):
+        update.message.reply_text("Wrong init LIVE link!")
+        return
+    os.environ['VOLLEYPY_VOLLEYDATA'] = tocheck
+    start("")
+    update.message.reply_text(os.environ['VOLLEYPY_REDDIT'] + " DONE!")
+
+
+def chg_reddit(bot, update):
+    if not update.message.from_user.username == TELEGRAM_ADMIN:
+        update.message.reply_text("WRONG USER NAME")
+        return
+    tocheck = update.message.text.split()[1]
+    if not tocheck.startswith("https://www.reddit.com/r/" + SUBREDDIT):
+        update.message.reply_text("Wrong reddit link!")
+        return
+    os.environ['VOLLEYPY_REDDIT'] = tocheck
+
+    tocheck = update.message.text.split()[2]
+    if not tocheck.startswith("http://volleynet.at/") and not tocheck.endswith("LIVE.htm"):
+        update.message.reply_text("Wrong init LIVE link!")
+        return
+    os.environ['VOLLEYPY_VOLLEYDATA'] = tocheck
+
+    update.message.reply_text(os.environ['VOLLEYPY_REDDIT'] + " DONE!")
+
+
+def chg_comp(bot, update):
+    if not update.message.from_user.username == TELEGRAM_ADMIN:
+        update.message.reply_text("WRONG USER NAME")
+        return
+    os.environ['VOLLEYPY_COMP'] = update.message.text.split()[1]
+    update.message.reply_text(os.environ['VOLLEYPY_COMP'] + " DONE!")
+
+
+def chg_stream(bot, update):
+    if not update.message.from_user.username == TELEGRAM_ADMIN:
+        update.message.reply_text("WRONG USER NAME")
+        return
+    os.environ['VOLLEYPY_STREAM'] = update.message.text.split()[1]
+    update.message.reply_text(os.environ['VOLLEYPY_STREAM'] + " DONE!")
+
+
+def info(bot, update):
+    update.message.reply_text("TODO")
 
 
 def main():
     os.environ['VOLLEYPY_REDDIT'] = ""
-    os.environ['VOLLEYPY_GAMENR'] = ""
     os.environ['VOLLEYPY_STREAM'] = "TBA"
+    os.environ['VOLLEYPY_COMP'] = DEFAULT_COMP
+    os.environ['VOLLEYPY_VOLLEYDATA'] = ""
+    os.environ['VOLLEYPY_LINKS'] = DEFAULT_LINKS
     updater = Updater(TELEGRAM_TOKEN)
     dp = updater.dispatcher
-    dp.add_handler(CommandHandler("up", update_match))
+    dp.add_handler(CommandHandler("u", update_match))
     dp.add_handler(CommandHandler("e", end_match))
+    dp.add_handler(CommandHandler("i", init_match))
+    dp.add_handler(CommandHandler("comp", chg_comp))
+    dp.add_handler(CommandHandler("reddit", chg_reddit))
+    dp.add_handler(CommandHandler("stream", chg_stream))
+    dp.add_handler(CommandHandler("help", info))
+    dp.add_handler(CommandHandler("start", info))
+
     updater.start_polling()
 
     updater.idle()
