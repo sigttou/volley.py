@@ -21,7 +21,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 
-def start(update, end=0):
+def match_update_routine(update, end=0):
     data = {'home_team': '',
             'away_team': '',
             'home_points': 0,
@@ -205,7 +205,10 @@ def update_match(bot, update):
     if not os.environ['VOLLEYPY_REDDIT']:
         update.message.reply_text("No reddit link set")
         return
-    start(u" ".join(update.message.text.split()[1:]))
+    text = ""
+    if len(update.message.text.split()) > 1:
+        text = u" ".join(update.message.text.split()[1:])
+    match_update_routine(text, 1)
     update.message.reply_text("Match updated!")
 
 
@@ -216,7 +219,10 @@ def end_match(bot, update):
     if not os.environ['VOLLEYPY_REDDIT']:
         update.message.reply_text("No reddit link set")
         return
-    start(u" ".join(update.message.text.split()[1:]), 1)
+    text = ""
+    if len(update.message.text.split()) > 1:
+        text = u" ".join(update.message.text.split()[1:])
+    match_update_routine(text, 1)
     os.environ['VOLLEYPY_REDDIT'] = ""
     os.environ['VOLLEYPY_STREAM'] = "TBA"
     os.environ['VOLLEYPY_VOLLEYDATA'] = ""
@@ -227,12 +233,15 @@ def init_match(bot, update):
     if not update.message.from_user.username == TELEGRAM_ADMIN:
         update.message.reply_text("WRONG USER NAME")
         return
+    if len(update.message.text.split()) != 2:
+        update.message.reply_text("Wrong number of parameters")
+        return
     tocheck = update.message.text.split()[1]
     if not tocheck.startswith("http://volleynet.at/") and not tocheck.endswith("LIVE.htm"):
         update.message.reply_text("Wrong init LIVE link!")
         return
     os.environ['VOLLEYPY_VOLLEYDATA'] = tocheck
-    start("")
+    match_update_routine("")
     update.message.reply_text(os.environ['VOLLEYPY_REDDIT'] + " DONE!")
 
 
@@ -240,18 +249,19 @@ def chg_reddit(bot, update):
     if not update.message.from_user.username == TELEGRAM_ADMIN:
         update.message.reply_text("WRONG USER NAME")
         return
+    if len(update.message.text.split()) != 3:
+        update.message.reply_text("Wrong number of parameters")
+        return
     tocheck = update.message.text.split()[1]
     if not tocheck.startswith("https://www.reddit.com/r/" + SUBREDDIT):
         update.message.reply_text("Wrong reddit link!")
         return
     os.environ['VOLLEYPY_REDDIT'] = tocheck
-
     tocheck = update.message.text.split()[2]
     if not tocheck.startswith("http://volleynet.at/") and not tocheck.endswith("LIVE.htm"):
         update.message.reply_text("Wrong init LIVE link!")
         return
     os.environ['VOLLEYPY_VOLLEYDATA'] = tocheck
-
     update.message.reply_text(os.environ['VOLLEYPY_REDDIT'] + " DONE!")
 
 
@@ -259,13 +269,19 @@ def chg_comp(bot, update):
     if not update.message.from_user.username == TELEGRAM_ADMIN:
         update.message.reply_text("WRONG USER NAME")
         return
-    os.environ['VOLLEYPY_COMP'] = update.message.text.split()[1]
+    if len(update.message.text.split()) < 2:
+        update.message.reply_text("Wrong number of parameters")
+        return
+    os.environ['VOLLEYPY_COMP'] = u" ".join(update.message.text.split()[1:])
     update.message.reply_text(os.environ['VOLLEYPY_COMP'] + " DONE!")
 
 
 def chg_stream(bot, update):
     if not update.message.from_user.username == TELEGRAM_ADMIN:
         update.message.reply_text("WRONG USER NAME")
+        return
+    if len(update.message.text.split()) != 2:
+        update.message.reply_text("Wrong number of parameters")
         return
     link = update.message.text.split()[1]
     os.environ['VOLLEYPY_STREAM'] = "[stream](" + link + ")"
