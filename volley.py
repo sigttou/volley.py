@@ -52,17 +52,18 @@ def match_update_routine(update, end=0):
             'away_set_points': [None] * 5,
             'status': ''
             }
+
     get_match_links(data)
     get_general_info(data)
     get_scoreline(data)
+
     if update:
         if end:
             update = "**FINISHED: " + update + "**"
         add_updates(data, update)
     if end:
-        post_thread(data, os.environ['VOLLEYPY_REDDIT'])
         open("updates", 'w').close()
-        return
+
     post_thread(data, os.environ['VOLLEYPY_REDDIT'])
 
 
@@ -195,12 +196,12 @@ def add_updates(data, update):
     with open("updates", "a") as f:
         f.write("**" + str(data['time_over']) + "'**: " +
                 " " + update + "\n\n")
-
-
-def post_thread(data, url):
     filein = open("updates")
     data['updates'] = filein.read()
     filein.close()
+
+
+def post_thread(data, url):
     filein = open("templates/thread.tpl")
     src = Template(filein.read())
     filein.close()
