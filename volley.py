@@ -228,7 +228,7 @@ def update_match(bot, update):
     text = ""
     if len(update.message.text.split()) > 1:
         text = u" ".join(update.message.text.split()[1:])
-    match_update_routine(text, 1)
+    match_update_routine(text)
     update.message.reply_text("Match updated!")
 
 
@@ -255,6 +255,9 @@ def init_match(bot, update):
         return
     if len(update.message.text.split()) != 2:
         update.message.reply_text("Wrong number of parameters")
+        return
+    if os.environ['VOLLEYPY_VOLLEYDATA']:
+        update.message.reply_text("Please end current game first")
         return
     tocheck = update.message.text.split()[1]
     if not (tocheck.startswith("http://volleynet.at/") and
