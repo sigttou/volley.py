@@ -2,22 +2,23 @@
 # -*- coding: utf-8 -*-
 # volley.py - Create match thread style info for reddit from volleyball games
 # Further Information:
-# https://crap.solutions/pages/volley.html - https://github.com/sigttou/volley.py
+# https://crap.solutions/pages/volley.html https://github.com/sigttou/volley.py
 
 import urllib3
 from bs4 import BeautifulSoup
 from string import Template
 import praw
 import OAuth2Util
-from config import TELEGRAM_GROUP, TELEGRAM_TOKEN, TELEGRAM_ADMIN, DEFAULT_COMP, DEFAULT_LINKS, SUBREDDIT
+from config import TELEGRAM_GROUP, TELEGRAM_TOKEN, TELEGRAM_ADMIN
+from config import DEFAULT_COMP, DEFAULT_LINKS, SUBREDDIT
 from telegram.ext import Updater, CommandHandler
 import logging
 import os
 
 # Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
-
+logging.basicConfig(
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -92,17 +93,26 @@ def get_general_info(data):
             analyse = analyse[1]
         else:
             continue
-        if analyse.attrs.get('id') and analyse.attrs.get('id').startswith("corpo_pagina_GV_elenco_casa_L_Nome_"):
-            data['home_members'][len(data['home_members'])] = analyse.contents[0]
-            data['home_nums'][len(data['home_nums'])] = lookfor[i-1].contents[0]
-        elif analyse.attrs.get('id') and analyse.attrs.get('id').startswith("corpo_pagina_GV_elenco_fuori_L_Nome_"):
-            data['away_members'][len(data['away_members'])] = analyse.contents[0]
-            data['away_nums'][len(data['away_nums'])] = lookfor[i-1].contents[0]
+        if analyse.attrs.get('id') and \
+           analyse.attrs.get('id').startswith(
+                   "corpo_pagina_GV_elenco_casa_L_Nome_"):
+            data['home_members'][len(data['home_members'])] = \
+                    analyse.contents[0]
+            data['home_nums'][len(data['home_nums'])] = \
+                lookfor[i-1].contents[0]
+        elif analyse.attrs.get('id') and \
+            analyse.attrs.get('id').startswith(
+                     "corpo_pagina_GV_elenco_fuori_L_Nome_"):
+            data['away_members'][len(data['away_members'])] = \
+                    analyse.contents[0]
+            data['away_nums'][len(data['away_nums'])] = \
+                lookfor[i-1].contents[0]
 
     for span in soup.find_all('span'):
         if span.attrs.get('id') == 'corpo_pagina_L_Impianto':
             data['location'] = span.contents[0]
-        elif span.attrs.get('id') and span.attrs.get('id').startswith("corpo_pagina_L_Arbitro"):
+        elif span.attrs.get('id') and \
+                span.attrs.get('id').startswith("corpo_pagina_L_Arbitro"):
             try:
                 if(not data['refs']):
                     data['refs'] += span.contents[0] + ","
@@ -123,12 +133,15 @@ def get_general_info(data):
 
     data['teams'] += "\# | {home_team} | \# | {away_team}\n".format(**data)
     data['teams'] += "---|---|---|----\n"
-    for i in range(0, max(len(data['home_members']), len(data['away_members']))):
+    for i in range(0,
+                   max(len(data['home_members']), len(data['away_members']))):
         data['teams'] += "{} | {} | {} | {}\n".format(
                 data['home_nums'].get(i) if data['home_nums'].get(i) else "",
-                data['home_members'].get(i) if data['home_members'].get(i) else "",
+                data['home_members'].get(i) if data['home_members'].get(i)
+                else "",
                 data['away_nums'].get(i) if data['away_nums'].get(i) else "",
-                data['away_members'].get(i) if data['away_members'].get(i) else "")
+                data['away_members'].get(i) if data['away_members'].get(i)
+                else "")
     data['teams'] += "|||\n"
     data['teams'] += u" | {} | | {}\n".format(data['home_coach'],
                                               data['away_coach'])
@@ -148,7 +161,8 @@ def get_scoreline(data):
             data['away_points'] = span.contents[0]
         elif span.attrs.get('id').startswith("L_TimeSet"):
             try:
-                data['set_time'][int(span.attrs.get('id')[-1])-1] = int(span.contents[0][:-1])
+                data['set_time'][int(span.attrs.get('id')[-1])-1] = \
+                        int(span.contents[0][:-1])
             except:
                 pass
         elif span.attrs.get('id').startswith("L_Set"):
@@ -167,16 +181,20 @@ def get_scoreline(data):
     data['time_over'] = sum(data['set_time'])
 
     for i in range(0, len(data['set_time'])):
-        data['scoreline'] += "{} | {}' | {}:{}\n".format(i+1,
-                                                         data['set_time'][i],
-                                                         data['home_set_points'][i],
-                                                         data['away_set_points'][i])
-    data['scoreline'] += "**OA** | **{time_over}'** | **{home_over}:{away_over}**\n".format(**data)
+        data['scoreline'] += "{} | {}' | {}:{}\n".format(
+                i+1,
+                data['set_time'][i],
+                data['home_set_points'][i],
+                data['away_set_points'][i]
+                )
+    data['scoreline'] += ("**OA** | **{time_over}'** | " +
+                          "**{home_over}:{away_over}**\n").format(**data)
 
 
 def add_updates(data, update):
     with open("updates", "a") as f:
-        f.write("**" + str(data['time_over']) + "'**: " + " " + update + "\n\n")
+        f.write("**" + str(data['time_over']) + "'**: " +
+                " " + update + "\n\n")
 
 
 def post_thread(data, url):
@@ -193,13 +211,15 @@ def post_thread(data, url):
         post = r.get_submission(url=url)
         post.edit(result)
     else:
-        title = "Match Thread: {home_team} Vs {away_team} [{competition}]".format(**data)
+        title = ("Match Thread: " +
+                 "{home_team} Vs {away_team} [{competition}]").format(**data)
         post = r.submit(SUBREDDIT, title, result)
         os.environ['VOLLEYPY_REDDIT'] = post.url
 
 
 def update_match(bot, update):
-    if not (update.message.from_user.username == TELEGRAM_ADMIN or update.message.id == TELEGRAM_GROUP):
+    if not (update.message.from_user.username == TELEGRAM_ADMIN or
+            update.message.id == TELEGRAM_GROUP):
         update.message.reply_text("WRONG USER NAME OR GROUP")
         return
     if not os.environ['VOLLEYPY_REDDIT']:
@@ -237,7 +257,8 @@ def init_match(bot, update):
         update.message.reply_text("Wrong number of parameters")
         return
     tocheck = update.message.text.split()[1]
-    if not tocheck.startswith("http://volleynet.at/") and not tocheck.endswith("LIVE.htm"):
+    if not (tocheck.startswith("http://volleynet.at/") and
+            tocheck.endswith("LIVE.htm")):
         update.message.reply_text("Wrong init LIVE link!")
         return
     os.environ['VOLLEYPY_VOLLEYDATA'] = tocheck
@@ -258,7 +279,8 @@ def chg_reddit(bot, update):
         return
     os.environ['VOLLEYPY_REDDIT'] = tocheck
     tocheck = update.message.text.split()[2]
-    if not tocheck.startswith("http://volleynet.at/") and not tocheck.endswith("LIVE.htm"):
+    if not tocheck.startswith("http://volleynet.at/") and \
+            not tocheck.endswith("LIVE.htm"):
         update.message.reply_text("Wrong init LIVE link!")
         return
     os.environ['VOLLEYPY_VOLLEYDATA'] = tocheck
@@ -291,9 +313,12 @@ def chg_stream(bot, update):
 def info(bot, update):
     reply = "'/i <LIVE_LINK>' will init the match thread\n"
     reply += "'/u <UPDATE>' will add the given update to the thread\n"
-    reply += "'/e <FINALUPDATE>' will reset the bot and set the one given update\n"
-    reply += "'/comp <COMP>' will change the competition if it's not the default\n"
-    reply += "'/reddit <REDDIT_LINK> <LIVE_LINK>' load already existing thread\n"
+    reply += "'/e <FINALUPDATE>' " + \
+             "will reset the bot and set the one given update\n"
+    reply += "'/comp <COMP>' " + \
+             "will change the competition if it's not the default\n"
+    reply += "'/reddit <REDDIT_LINK> <LIVE_LINK>' " + \
+             "load already existing thread\n"
     reply += "'/stream <STREAM_LINK> will set a live stream'\n"
     update.message.reply_text(reply)
 
@@ -306,6 +331,7 @@ def main():
     os.environ['VOLLEYPY_LINKS'] = DEFAULT_LINKS
     updater = Updater(TELEGRAM_TOKEN)
     dp = updater.dispatcher
+
     dp.add_handler(CommandHandler("u", update_match))
     dp.add_handler(CommandHandler("e", end_match))
     dp.add_handler(CommandHandler("i", init_match))
@@ -316,7 +342,6 @@ def main():
     dp.add_handler(CommandHandler("start", info))
 
     updater.start_polling()
-
     updater.idle()
 
 if __name__ == '__main__':
