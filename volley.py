@@ -226,7 +226,7 @@ def reset_env():
     os.environ['VOLLEYPY_LINKS'] = DEFAULT_LINKS
 
 
-def update_match(bot, update):
+def handl_update_match(bot, update):
     if not (update.message.from_user.username == TELEGRAM_ADMIN or
             update.message.id == TELEGRAM_GROUP):
         update.message.reply_text("WRONG USER NAME OR GROUP")
@@ -241,7 +241,7 @@ def update_match(bot, update):
     update.message.reply_text("Match updated!")
 
 
-def end_match(bot, update):
+def handl_end_match(bot, update):
     if not update.message.from_user.username == TELEGRAM_ADMIN:
         update.message.reply_text("WRONG USER NAME")
         return
@@ -256,7 +256,7 @@ def end_match(bot, update):
     update.message.reply_text("Match ended!")
 
 
-def init_match(bot, update):
+def handl_init_match(bot, update):
     if not update.message.from_user.username == TELEGRAM_ADMIN:
         update.message.reply_text("WRONG USER NAME")
         return
@@ -276,7 +276,7 @@ def init_match(bot, update):
     update.message.reply_text(os.environ['VOLLEYPY_REDDIT'] + " DONE!")
 
 
-def chg_reddit(bot, update):
+def handl_chg_reddit(bot, update):
     if not update.message.from_user.username == TELEGRAM_ADMIN:
         update.message.reply_text("WRONG USER NAME")
         return
@@ -297,7 +297,7 @@ def chg_reddit(bot, update):
     update.message.reply_text(os.environ['VOLLEYPY_REDDIT'] + " DONE!")
 
 
-def chg_comp(bot, update):
+def handl_chg_comp(bot, update):
     if not update.message.from_user.username == TELEGRAM_ADMIN:
         update.message.reply_text("WRONG USER NAME")
         return
@@ -308,7 +308,7 @@ def chg_comp(bot, update):
     update.message.reply_text(os.environ['VOLLEYPY_COMP'] + " DONE!")
 
 
-def chg_stream(bot, update):
+def handl_chg_stream(bot, update):
     if not update.message.from_user.username == TELEGRAM_ADMIN:
         update.message.reply_text("WRONG USER NAME")
         return
@@ -320,7 +320,7 @@ def chg_stream(bot, update):
     update.message.reply_text(os.environ['VOLLEYPY_STREAM'] + " DONE!")
 
 
-def info(bot, update):
+def handl_info(bot, update):
     reply = "'/i <LIVE_LINK>' will init the match thread\n"
     reply += "'/u <UPDATE>' will add the given update to the thread\n"
     reply += "'/e <FINALUPDATE>' " + \
@@ -338,14 +338,14 @@ def main():
     updater = Updater(TELEGRAM_TOKEN)
     dp = updater.dispatcher
 
-    dp.add_handler(CommandHandler("u", update_match))
-    dp.add_handler(CommandHandler("e", end_match))
-    dp.add_handler(CommandHandler("i", init_match))
-    dp.add_handler(CommandHandler("comp", chg_comp))
-    dp.add_handler(CommandHandler("reddit", chg_reddit))
-    dp.add_handler(CommandHandler("stream", chg_stream))
-    dp.add_handler(CommandHandler("help", info))
-    dp.add_handler(CommandHandler("start", info))
+    dp.add_handler(CommandHandler("u", handl_update_match))
+    dp.add_handler(CommandHandler("e", handl_end_match))
+    dp.add_handler(CommandHandler("i", handl_init_match))
+    dp.add_handler(CommandHandler("comp", handl_chg_comp))
+    dp.add_handler(CommandHandler("reddit", handl_chg_reddit))
+    dp.add_handler(CommandHandler("stream", handl_chg_stream))
+    dp.add_handler(CommandHandler("help", handl_info))
+    dp.add_handler(CommandHandler("start", handl_info))
 
     updater.start_polling()
     updater.idle()
