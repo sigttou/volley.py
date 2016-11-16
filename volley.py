@@ -217,6 +217,14 @@ def post_thread(data, url):
         os.environ['VOLLEYPY_REDDIT'] = post.url
 
 
+def reset_env():
+    os.environ['VOLLEYPY_REDDIT'] = ""
+    os.environ['VOLLEYPY_STREAM'] = "TBA"
+    os.environ['VOLLEYPY_COMP'] = DEFAULT_COMP
+    os.environ['VOLLEYPY_VOLLEYDATA'] = ""
+    os.environ['VOLLEYPY_LINKS'] = DEFAULT_LINKS
+
+
 def update_match(bot, update):
     if not (update.message.from_user.username == TELEGRAM_ADMIN or
             update.message.id == TELEGRAM_GROUP):
@@ -243,9 +251,7 @@ def end_match(bot, update):
     if len(update.message.text.split()) > 1:
         text = u" ".join(update.message.text.split()[1:])
     match_update_routine(text, 1)
-    os.environ['VOLLEYPY_REDDIT'] = ""
-    os.environ['VOLLEYPY_STREAM'] = "TBA"
-    os.environ['VOLLEYPY_VOLLEYDATA'] = ""
+    reset_env()
     update.message.reply_text("Match ended!")
 
 
@@ -327,11 +333,7 @@ def info(bot, update):
 
 
 def main():
-    os.environ['VOLLEYPY_REDDIT'] = ""
-    os.environ['VOLLEYPY_STREAM'] = "TBA"
-    os.environ['VOLLEYPY_COMP'] = DEFAULT_COMP
-    os.environ['VOLLEYPY_VOLLEYDATA'] = ""
-    os.environ['VOLLEYPY_LINKS'] = DEFAULT_LINKS
+    reset_env()
     updater = Updater(TELEGRAM_TOKEN)
     dp = updater.dispatcher
 
