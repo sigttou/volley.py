@@ -224,14 +224,11 @@ def reset_env():
     os.environ['VOLLEYPY_COMP'] = DEFAULT_COMP
     os.environ['VOLLEYPY_VOLLEYDATA'] = ""
     os.environ['VOLLEYPY_LINKS'] = DEFAULT_LINKS
-    os.environ['VOLLEYPY_ALLOWGRP'] = "true"
 
 
 def handl_update_match(bot, update):
-    if not (update.message.from_user.username == TELEGRAM_ADMIN or
-            (update.message.id == TELEGRAM_GROUP and
-             os.environ['VOLLEYPY_ALLOWGRP'])):
-        update.message.reply_text("WRONG USER NAME OR GROUP")
+    if not update.message.from_user.username == TELEGRAM_ADMIN:
+        update.message.reply_text("WRONG USER NAME")
         return
     if not os.environ['VOLLEYPY_REDDIT']:
         update.message.reply_text("No reddit link set")
@@ -322,25 +319,32 @@ def handl_chg_stream(bot, update):
     update.message.reply_text(os.environ['VOLLEYPY_STREAM'] + " DONE!")
 
 
-def handl_disallow_grp(bot, update):
-    if not update.message.from_user.username == TELEGRAM_ADMIN:
-        update.message.reply_text("WRONG USER NAME")
+def handl_comment_match(bot, update):
+    if not (update.message.from_user.username == TELEGRAM_ADMIN or
+            str(update.message['chat']['id']) == TELEGRAM_GROUP):
+        update.message.reply_text("WRONG USER NAME OR GROUP")
         return
-    os.environ['VOLLEYPY_ALLOWGRP'] = ""
-    update.message.reply_text("Group is not allowed to update anymore")
-
-
-def handl_allow_grp(bot, update):
-    if not update.message.from_user.username == TELEGRAM_ADMIN:
-        update.message.reply_text("WRONG USER NAME")
+    if not os.environ['VOLLEYPY_REDDIT']:
+        update.message.reply_text("No reddit link set")
         return
-    os.environ['VOLLEYPY_ALLOWGRP'] = "true"
-    update.message.reply_text("Group is allowed to update again")
+    if len(update.message.text.split()) < 2:
+        update.message.reply_text("Wrong number of parameters")
+        return
+    name = update.message.from_user['first_name']
+    r = praw.Reddit("python3:VolleyAT1.0 (by /u/K-3PX)")
+    OAuth2Util.OAuth2Util(r, configfile="oauth.ini")
+    post = r.get_submission(url=os.environ['VOLLEYPY_REDDIT'])
+    text = name + " said: "
+    text += u" ".join(update.message.text.split()[1:])
+    post.add_comment(text)
+    update.message.reply_text("Comment added!")
 
 
 def handl_info(bot, update):
     reply = "'/i <LIVE_LINK>' will init the match thread\n"
     reply += "'/u <UPDATE>' will add the given update to the thread\n"
+    reply += "'/c <COMMENT>' will add a comment to the thread " + \
+             "possible from the configured group\n"
     reply += "'/e <FINALUPDATE>' " + \
              "will reset the bot and set the one given update\n"
     reply += "'/comp <COMP>' " + \
@@ -348,8 +352,6 @@ def handl_info(bot, update):
     reply += "'/reddit <REDDIT_LINK> <LIVE_LINK>' " + \
              "load already existing thread\n"
     reply += "'/stream <STREAM_LINK>' will set a live stream\n"
-    reply += "'/blockgrp' disables the posibility to post from the grp\n"
-    reply += "'/allowgrp' enables the posibility to post from the grp\n"
     update.message.reply_text(reply)
 
 
@@ -361,13 +363,12 @@ def main():
     dp.add_handler(CommandHandler("u", handl_update_match))
     dp.add_handler(CommandHandler("e", handl_end_match))
     dp.add_handler(CommandHandler("i", handl_init_match))
+    dp.add_handler(CommandHandler("c", handl_comment_match))
     dp.add_handler(CommandHandler("comp", handl_chg_comp))
     dp.add_handler(CommandHandler("reddit", handl_chg_reddit))
     dp.add_handler(CommandHandler("stream", handl_chg_stream))
     dp.add_handler(CommandHandler("help", handl_info))
     dp.add_handler(CommandHandler("start", handl_info))
-    dp.add_handler(CommandHandler("blockgrp", handl_disallow_grp))
-    dp.add_handler(CommandHandler("allowgrp", handl_allow_grp))
 
     updater.start_polling()
     updater.idle()
