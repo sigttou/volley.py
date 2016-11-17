@@ -224,11 +224,13 @@ def reset_env():
     os.environ['VOLLEYPY_COMP'] = DEFAULT_COMP
     os.environ['VOLLEYPY_VOLLEYDATA'] = ""
     os.environ['VOLLEYPY_LINKS'] = DEFAULT_LINKS
+    os.environ['VOLLEYPY_ALLOWGRP'] = "true"
 
 
 def handl_update_match(bot, update):
     if not (update.message.from_user.username == TELEGRAM_ADMIN or
-            update.message.id == TELEGRAM_GROUP):
+            (update.message.id == TELEGRAM_GROUP and
+             os.environ['VOLLEYPY_ALLOWGRP'])):
         update.message.reply_text("WRONG USER NAME OR GROUP")
         return
     if not os.environ['VOLLEYPY_REDDIT']:
@@ -320,6 +322,22 @@ def handl_chg_stream(bot, update):
     update.message.reply_text(os.environ['VOLLEYPY_STREAM'] + " DONE!")
 
 
+def handl_disallow_grp(bot, update):
+    if not update.message.from_user.username == TELEGRAM_ADMIN:
+        update.message.reply_text("WRONG USER NAME")
+        return
+    os.environ['VOLLEYPY_ALLOWGRP'] = ""
+    update.message.reply_text("Group is not allowed to update anymore")
+
+
+def handl_allow_grp(bot, update):
+    if not update.message.from_user.username == TELEGRAM_ADMIN:
+        update.message.reply_text("WRONG USER NAME")
+        return
+    os.environ['VOLLEYPY_ALLOWGRP'] = "true"
+    update.message.reply_text("Group is allowed to update again")
+
+
 def handl_info(bot, update):
     reply = "'/i <LIVE_LINK>' will init the match thread\n"
     reply += "'/u <UPDATE>' will add the given update to the thread\n"
@@ -329,7 +347,9 @@ def handl_info(bot, update):
              "will change the competition if it's not the default\n"
     reply += "'/reddit <REDDIT_LINK> <LIVE_LINK>' " + \
              "load already existing thread\n"
-    reply += "'/stream <STREAM_LINK> will set a live stream'\n"
+    reply += "'/stream <STREAM_LINK>' will set a live stream\n"
+    reply += "'/blockgrp' disables the posibility to post from the grp\n"
+    reply += "'/allowgrp' enables the posibility to post from the grp\n"
     update.message.reply_text(reply)
 
 
@@ -346,6 +366,8 @@ def main():
     dp.add_handler(CommandHandler("stream", handl_chg_stream))
     dp.add_handler(CommandHandler("help", handl_info))
     dp.add_handler(CommandHandler("start", handl_info))
+    dp.add_handler(CommandHandler("blockgrp", handl_disallow_grp))
+    dp.add_handler(CommandHandler("allowgrp", handl_allow_grp))
 
     updater.start_polling()
     updater.idle()
