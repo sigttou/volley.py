@@ -226,6 +226,11 @@ def reset_env():
     os.environ['VOLLEYPY_LINKS'] = DEFAULT_LINKS
 
 
+def replace_kitnr(text, data):
+    return
+    # TODO
+
+
 def handl_update_match(bot, update):
     if not update.message.from_user.username == TELEGRAM_ADMIN:
         update.message.reply_text("WRONG USER NAME")
@@ -372,6 +377,7 @@ def main():
 
     updater.start_polling()
     updater.idle()
+
 
 if __name__ == '__main__':
     main()

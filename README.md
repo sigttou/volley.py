@@ -20,3 +20,6 @@ Besides them you need a reddit api key and a Telegram bot id.
 ## Example
 
 An example can be found [here](https://www.reddit.com/r/test/comments/5d3gn7/match_thread_psv_volleyballgemeinschaft_salzburg/)
+
+## TODO:
+- Add posibility to replace "#<h/a><NR>" with the playername on comments/updates
