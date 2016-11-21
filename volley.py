@@ -10,10 +10,12 @@ from string import Template
 import praw
 import OAuth2Util
 from config import TELEGRAM_GROUP, TELEGRAM_TOKEN, TELEGRAM_ADMIN
-from config import DEFAULT_COMP, DEFAULT_LINKS, SUBREDDIT
+from config import DEFAULT_COMP, DEFAULT_LINKS, SUBREDDIT, TEAM_DIR
 from telegram.ext import Updater, CommandHandler
 import logging
 import os
+from os import listdir
+from os.path import isfile, join
 
 # Enable logging
 logging.basicConfig(
@@ -345,6 +347,19 @@ def handl_comment_match(bot, update):
     update.message.reply_text("Comment added!")
 
 
+def handl_list_teams(bot, update):
+    if not update.message.from_user.username == TELEGRAM_ADMIN:
+        update.message.reply_text("WRONG USER NAME")
+        return
+    if len(update.message.text.split()) != 1:
+        update.message.reply_text("Wrong number of parameters")
+        return
+    reply = [f for f in listdir(TEAM_DIR) if isfile(join(TEAM_DIR, f))]
+    reply = [e.split(".")[:-1][0] for e in reply]
+    reply = "\n".join(reply)
+    update.message.reply_text(reply)
+
+
 def handl_info(bot, update):
     reply = "'/i <LIVE_LINK>' will init the match thread\n"
     reply += "'/u <UPDATE>' will add the given update to the thread\n"
@@ -357,6 +372,7 @@ def handl_info(bot, update):
     reply += "'/reddit <REDDIT_LINK> <LIVE_LINK>' " + \
              "load already existing thread\n"
     reply += "'/stream <STREAM_LINK>' will set a live stream\n"
+    reply += "'/listteams' get a list of available teams to set\n"
     update.message.reply_text(reply)
 
 
@@ -374,6 +390,7 @@ def main():
     dp.add_handler(CommandHandler("stream", handl_chg_stream))
     dp.add_handler(CommandHandler("help", handl_info))
     dp.add_handler(CommandHandler("start", handl_info))
+    dp.add_handler(CommandHandler("listteams", handl_list_teams))
 
     updater.start_polling()
     updater.idle()
