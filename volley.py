@@ -16,6 +16,7 @@ import logging
 import os
 from os import listdir
 from os.path import isfile, join
+import json
 
 # Enable logging
 logging.basicConfig(
@@ -27,6 +28,7 @@ logger = logging.getLogger(__name__)
 def match_update_routine(update, end=0):
     data = {'home_team': '',
             'away_team': '',
+            'status': '',
             'home_points': 0,
             'away_points': 0,
             'home_over': 0,
@@ -57,6 +59,7 @@ def match_update_routine(update, end=0):
 
     if update:
         if end:
+            data['status'] = "ENDED: "
             update = "**FINISHED: " + update + "**"
         add_updates(data, update)
     if end:
@@ -73,21 +76,33 @@ def get_match_links(data):
 
 
 def get_general_info(data):
-    # TODO: fix teams!
+    with open(os.environ['VOLLEYPY_HJSON'], "r") as f:
+        hloadfrom = json.loads(f.read())
+    with open(os.environ['VOLLEYPY_AJSON'], "r") as f:
+        aloadfrom = json.loads(f.read())
+    data['home_team'] = hloadfrom['name']
+    data['away_team'] = aloadfrom['name']
+    data['home_members'] = hloadfrom['players']
+    data['away_members'] = aloadfrom['players']
+    data['home_coaches'] = hloadfrom['managers']
+    data['away_coaches'] = aloadfrom['managers']
+
     data['teams'] += "\# | {home_team} | \# | {away_team}\n".format(**data)
     data['teams'] += "---|---|---|----\n"
     for i in range(0,
                    max(len(data['home_members']), len(data['away_members']))):
         data['teams'] += "{} | {} | {} | {}\n".format(
-                data['home_nums'].get(i) if data['home_nums'].get(i) else "",
-                data['home_members'].get(i) if data['home_members'].get(i)
-                else "",
-                data['away_nums'].get(i) if data['away_nums'].get(i) else "",
-                data['away_members'].get(i) if data['away_members'].get(i)
-                else "")
+                list(data['home_members'].keys())[i] if
+                len(data['home_members']) > i else "",
+                data['home_members'][list(data['home_members'].keys())[i]] if
+                len(data['home_members']) > i else "",
+                list(data['away_members'].keys())[i] if
+                len(data['away_members']) > i else "",
+                data['away_members'][list(data['away_members'].keys())[i]] if
+                len(data['away_members']) > i else "")
     data['teams'] += "|||\n"
-    data['teams'] += u" | {} | | {}\n".format(data['home_coach'],
-                                              data['away_coach'])
+    data['teams'] += u" | {} | | {}\n".format(data['home_coaches'][0],
+                                              data['away_coaches'][0])
 
 
 def get_scoreline(data):
