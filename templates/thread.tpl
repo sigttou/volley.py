@@ -4,10 +4,6 @@
 
 **Kick Off Time:** $kick_off CEST
 
-**Venue:** $location
-
-**Referees:** $refs
-
 **Stream:** $stream
 
 **Other Links:** $links
