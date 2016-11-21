@@ -206,7 +206,7 @@ def handl_init_match(bot, update):
     if not update.message.from_user.username == TELEGRAM_ADMIN:
         update.message.reply_text("WRONG USER NAME")
         return
-    if len(update.message.text.split()) != 4:
+    if len(update.message.text.split()) != 5:
         update.message.reply_text("Wrong number of parameters")
         return
     if os.environ['VOLLEYPY_VOLLEYDATA']:
@@ -228,6 +228,7 @@ def handl_init_match(bot, update):
     os.environ['VOLLEYPY_VOLLEYDATA'] = tocheck
     os.environ['VOLLEYPY_HJSON'] = hjson
     os.environ['VOLLEYPY_AJSON'] = ajson
+    os.environ['VOLLEYPY_KICKOFF'] = update.message.text.split()[4]
     match_update_routine("")
     update.message.reply_text(os.environ['VOLLEYPY_REDDIT'] + " DONE!")
 
@@ -311,7 +312,7 @@ def handl_list_teams(bot, update):
 
 
 def handl_info(bot, update):
-    reply = "'/i <LIVE_LINK> <HOME_TEAM> <AWAY_TEAM>' "
+    reply = "'/i <LIVE_LINK> <HOME_TEAM> <AWAY_TEAM> <KICKOFF_TIME>' "
     reply += "will init the match thread\n"
     reply += "'/u <UPDATE>' will add the given update to the thread\n"
     reply += "'/c <COMMENT>' will add a comment to the thread " + \
