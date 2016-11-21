@@ -59,7 +59,7 @@ def match_update_routine(update, end=0):
 
     if update:
         if end:
-            data['status'] = "ENDED: "
+            data['status'] = "FT: "
             update = "**FINISHED: " + update + "**"
         add_updates(data, update)
     if end:
