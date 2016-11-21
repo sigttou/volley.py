@@ -166,6 +166,9 @@ def reset_env():
     os.environ['VOLLEYPY_COMP'] = DEFAULT_COMP
     os.environ['VOLLEYPY_VOLLEYDATA'] = ""
     os.environ['VOLLEYPY_LINKS'] = DEFAULT_LINKS
+    os.environ['VOLLEYPY_HJSON'] = ""
+    os.environ['VOLLEYPY_AJSON'] = ""
+    os.environ['VOLLEYPY_KICKOFF'] = ""
 
 
 def replace_kitnr(text, data):
