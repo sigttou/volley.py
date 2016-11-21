@@ -206,7 +206,7 @@ def handl_init_match(bot, update):
     if not update.message.from_user.username == TELEGRAM_ADMIN:
         update.message.reply_text("WRONG USER NAME")
         return
-    if len(update.message.text.split()) != 2:
+    if len(update.message.text.split()) != 4:
         update.message.reply_text("Wrong number of parameters")
         return
     if os.environ['VOLLEYPY_VOLLEYDATA']:
@@ -217,7 +217,17 @@ def handl_init_match(bot, update):
             tocheck.endswith("LIVE.htm")):
         update.message.reply_text("Wrong init LIVE link!")
         return
+    hjson = TEAM_DIR + update.message.text.split()[2] + ".json"
+    if not isfile(hjson):
+        update.message.reply_text("Home team does not exist")
+        return
+    ajson = TEAM_DIR + update.message.text.split()[3] + ".json"
+    if not isfile(ajson):
+        update.message.reply_text("Away team does not exist")
+        return
     os.environ['VOLLEYPY_VOLLEYDATA'] = tocheck
+    os.environ['VOLLEYPY_HJSON'] = hjson
+    os.environ['VOLLEYPY_AJSON'] = ajson
     match_update_routine("")
     update.message.reply_text(os.environ['VOLLEYPY_REDDIT'] + " DONE!")
 
