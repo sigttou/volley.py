@@ -35,4 +35,4 @@ $scoreline
 $updates
 
 ---
-^This ^match ^thread ^was ^created ^with ^[volley.py](https://github.com/sigttou/volley.py)
+^^This ^^match ^^thread ^^was ^^created ^^with ^^[volley.py](https://github.com/sigttou/volley.py)
