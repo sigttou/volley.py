@@ -17,6 +17,7 @@ import os
 from os import listdir
 from os.path import isfile, join
 import json
+import re
 
 # Enable logging
 logging.basicConfig(
@@ -61,9 +62,18 @@ def match_update_routine(update, end=0):
         if end:
             data['status'] = "FT: "
             update = "**FINISHED: " + update + "**"
-        add_updates(data, update)
+    add_updates(data, update)
     if end:
         open("updates", 'w').close()
+
+    if os.environ['VOLLEYPY_COMMENT']:
+        r = praw.Reddit("python3:VolleyAT1.0 (by /u/K-3PX)")
+        OAuth2Util.OAuth2Util(r, configfile="oauth.ini")
+        text = os.environ['VOLLEYPY_COMMENT']
+        text = replace_kitnr(text, data)
+        post = r.get_submission(url=os.environ['VOLLEYPY_REDDIT'])
+        post.add_comment(text)
+        os.environ['VOLLEYPY_COMMENT'] = ""
 
     post_thread(data, os.environ['VOLLEYPY_REDDIT'])
 
@@ -150,18 +160,18 @@ def get_scoreline(data):
 
 
 def add_updates(data, update):
-    with open("updates", "a") as f:
-        f.write("**" + str(data['time_over']) + "'**: " +
-                " " + update + "\n\n")
-    filein = open("updates")
-    data['updates'] = filein.read()
-    filein.close()
+    if update:
+        with open("updates", "a") as f:
+            f.write("**" + str(data['time_over']) + "'**: " +
+                    " " + update + "\n\n")
+    with open("updates") as filein:
+        data['updates'] = filein.read()
+    data['updates'] = replace_kitnr(data['updates'], data)
 
 
 def post_thread(data, url):
-    filein = open("templates/thread.tpl")
-    src = Template(filein.read())
-    filein.close()
+    with open("templates/thread.tpl") as filein:
+        src = Template(filein.read())
     result = src.substitute(data)
     r = praw.Reddit("python3:VolleyAT1.0 (by /u/K-3PX)")
     OAuth2Util.OAuth2Util(r, configfile="oauth.ini")
@@ -184,11 +194,26 @@ def reset_env():
     os.environ['VOLLEYPY_HJSON'] = ""
     os.environ['VOLLEYPY_AJSON'] = ""
     os.environ['VOLLEYPY_KICKOFF'] = ""
+    os.environ['VOLLEYPY_COMMENT'] = ""
 
 
 def replace_kitnr(text, data):
-    return
-    # TODO
+    away_toreplace = [x[2:] for x in re.findall("#a[0-9]+", text)]
+    home_toreplace = [x[2:] for x in re.findall("#h[0-9]+", text)]
+
+    for entry in away_toreplace:
+        if data['away_members'].get(entry):
+            replacement = data['away_members'].get(entry).split()
+            replacement = [x.title() for x in replacement]
+            replacement = " ".join(replacement)
+            text = re.sub("#a" + entry, replacement, text)
+    for entry in home_toreplace:
+        if data['home_members'].get(entry):
+            replacement = data['home_members'].get(entry).split()
+            replacement = [x.title() for x in replacement]
+            replacement = " ".join(replacement)
+            text = re.sub("#h" + entry, replacement, text)
+    return text
 
 
 def handl_update_match(bot, update):
@@ -255,7 +280,7 @@ def handl_chg_reddit(bot, update):
     if not update.message.from_user.username == TELEGRAM_ADMIN:
         update.message.reply_text("WRONG USER NAME")
         return
-    if len(update.message.text.split()) != 3:
+    if len(update.message.text.split()) != 6:
         update.message.reply_text("Wrong number of parameters")
         return
     tocheck = update.message.text.split()[1]
@@ -268,7 +293,18 @@ def handl_chg_reddit(bot, update):
             not tocheck.endswith("LIVE.htm"):
         update.message.reply_text("Wrong init LIVE link!")
         return
+    hjson = TEAM_DIR + update.message.text.split()[3] + ".json"
+    if not isfile(hjson):
+        update.message.reply_text("Home team does not exist")
+        return
+    ajson = TEAM_DIR + update.message.text.split()[4] + ".json"
+    if not isfile(ajson):
+        update.message.reply_text("Away team does not exist")
+        return
     os.environ['VOLLEYPY_VOLLEYDATA'] = tocheck
+    os.environ['VOLLEYPY_HJSON'] = hjson
+    os.environ['VOLLEYPY_AJSON'] = ajson
+    os.environ['VOLLEYPY_KICKOFF'] = update.message.text.split()[5]
     update.message.reply_text(os.environ['VOLLEYPY_REDDIT'] + " DONE!")
 
 
@@ -306,13 +342,12 @@ def handl_comment_match(bot, update):
     if len(update.message.text.split()) < 2:
         update.message.reply_text("Wrong number of parameters")
         return
+
     name = update.message.from_user['first_name']
-    r = praw.Reddit("python3:VolleyAT1.0 (by /u/K-3PX)")
-    OAuth2Util.OAuth2Util(r, configfile="oauth.ini")
-    post = r.get_submission(url=os.environ['VOLLEYPY_REDDIT'])
     text = name + " said: "
     text += u" ".join(update.message.text.split()[1:])
-    post.add_comment(text)
+    os.environ['VOLLEYPY_COMMENT'] = text
+    match_update_routine("")
     update.message.reply_text("Comment added!")
 
 
@@ -330,8 +365,8 @@ def handl_list_teams(bot, update):
 
 
 def handl_info(bot, update):
-    reply = "'/i <LIVE_LINK> <HOME_TEAM> <AWAY_TEAM> <KICKOFF_TIME>' "
-    reply += "will init the match thread\n"
+    reply = "'/i <LIVE_LINK> <HOME_TEAM> <AWAY_TEAM> <KICKOFF_TIME>' " + \
+            "will init the match thread\n"
     reply += "'/u <UPDATE>' will add the given update to the thread\n"
     reply += "'/c <COMMENT>' will add a comment to the thread " + \
              "possible from the configured group\n"
@@ -339,7 +374,8 @@ def handl_info(bot, update):
              "will reset the bot and set the one given update\n"
     reply += "'/comp <COMP>' " + \
              "will change the competition if it's not the default\n"
-    reply += "'/reddit <REDDIT_LINK> <LIVE_LINK>' " + \
+    reply += "'/reddit <REDDIT_LINK> <LIVE_LINK> <HOME_TEAM> <AWAY_TEAM> " + \
+             "<KICKOFF_TIME>' " + \
              "load already existing thread\n"
     reply += "'/stream <STREAM_LINK>' will set a live stream\n"
     reply += "'/listteams' get a list of available teams to set\n"
