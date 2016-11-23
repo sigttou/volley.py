@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.5
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # volley.py - Create match thread style info for reddit from volleyball games
 # Further Information:
