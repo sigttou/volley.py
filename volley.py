@@ -11,6 +11,7 @@ import praw
 import OAuth2Util
 from config import TELEGRAM_GROUP, TELEGRAM_TOKEN, TELEGRAM_ADMIN
 from config import DEFAULT_COMP, DEFAULT_LINKS, SUBREDDIT, TEAM_DIR
+from config import THREAD_TEMPLATE
 from telegram.ext import Updater, CommandHandler
 import logging
 import os
@@ -170,7 +171,7 @@ def add_updates(data, update):
 
 
 def post_thread(data, url):
-    with open("templates/thread.tpl") as filein:
+    with open(THREAD_TEMPLATE) as filein:
         src = Template(filein.read())
     result = src.substitute(data)
     r = praw.Reddit("python3:VolleyAT1.0 (by /u/K-3PX)")
@@ -183,18 +184,6 @@ def post_thread(data, url):
                  "{home_team} Vs {away_team} [{competition}]").format(**data)
         post = r.submit(SUBREDDIT, title, result)
         os.environ['VOLLEYPY_REDDIT'] = post.url
-
-
-def reset_env():
-    os.environ['VOLLEYPY_REDDIT'] = ""
-    os.environ['VOLLEYPY_STREAM'] = "TBA"
-    os.environ['VOLLEYPY_COMP'] = DEFAULT_COMP
-    os.environ['VOLLEYPY_VOLLEYDATA'] = ""
-    os.environ['VOLLEYPY_LINKS'] = DEFAULT_LINKS
-    os.environ['VOLLEYPY_HJSON'] = ""
-    os.environ['VOLLEYPY_AJSON'] = ""
-    os.environ['VOLLEYPY_KICKOFF'] = ""
-    os.environ['VOLLEYPY_COMMENT'] = ""
 
 
 def replace_kitnr(text, data):
@@ -214,6 +203,18 @@ def replace_kitnr(text, data):
             replacement = " ".join(replacement)
             text = re.sub("#h" + entry, replacement, text)
     return text
+
+
+def reset_env():
+    os.environ['VOLLEYPY_REDDIT'] = ""
+    os.environ['VOLLEYPY_STREAM'] = "TBA"
+    os.environ['VOLLEYPY_COMP'] = DEFAULT_COMP
+    os.environ['VOLLEYPY_VOLLEYDATA'] = ""
+    os.environ['VOLLEYPY_LINKS'] = DEFAULT_LINKS
+    os.environ['VOLLEYPY_HJSON'] = ""
+    os.environ['VOLLEYPY_AJSON'] = ""
+    os.environ['VOLLEYPY_KICKOFF'] = ""
+    os.environ['VOLLEYPY_COMMENT'] = ""
 
 
 def handl_update_match(bot, update):
